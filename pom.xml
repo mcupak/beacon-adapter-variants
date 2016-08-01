@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.dnastack</groupId>
+    <artifactId>beacon-from-variants</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <name>beacon-from-variants</name>
+
+	<properties>
+        <version.compiler.plugin>3.5.1</version.compiler.plugin>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <version.javaee.api>7.0</version.javaee.api>
+        <version.beacon.api>0.3.0</version.beacon.api>
+        <version.beacon.adapter.api>1.0-SNAPSHOT</version.beacon.adapter.api>
+        <version.ga4gh.schema>0.6.0-SNAPSHOT</version.ga4gh.schema>
+        <version.protobuf>3.0.0-beta-3</version.protobuf>
+        <version.retrofit>2.0.2</version.retrofit>
+        <version.commons.lang>3.4</version.commons.lang>
+	</properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>javax</groupId>
+            <artifactId>javaee-api</artifactId>
+            <version>${version.javaee.api}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.ga4gh</groupId>
+            <artifactId>beacon</artifactId>
+            <version>${version.beacon.api}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.dnastack</groupId>
+            <artifactId>beacon-adapter-api</artifactId>
+            <version>${version.beacon.adapter.api}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.ga4gh</groupId>
+            <artifactId>ga4gh-schemas</artifactId>
+            <version>${version.ga4gh.schema}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java-util</artifactId>
+            <version>${version.protobuf}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.retrofit2</groupId>
+            <artifactId>retrofit</artifactId>
+            <version>${version.retrofit}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${version.commons.lang}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>${project.artifactId}</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${version.compiler.plugin}</version>
+                <configuration>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
+                </configuration>
+            </plugin>
+        </plugins>
+	</build>
+
+</project>
