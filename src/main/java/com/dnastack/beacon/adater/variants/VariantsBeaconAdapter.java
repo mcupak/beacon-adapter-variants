@@ -5,10 +5,14 @@ import com.dnastack.beacon.adater.variants.client.ga4gh.Ga4ghClient;
 import com.dnastack.beacon.adater.variants.client.ga4gh.exceptions.Ga4ghClientException;
 import com.dnastack.beacon.exceptions.BeaconAlleleRequestException;
 import com.dnastack.beacon.exceptions.BeaconException;
+import com.dnastack.beacon.utils.AdapterConfig;
+import com.dnastack.beacon.utils.ConfigValue;
 import com.dnastack.beacon.utils.Reason;
+import com.google.common.collect.Iterables;
 import ga4gh.Metadata.Dataset;
 import ga4gh.References.ReferenceSet;
 import ga4gh.Variants.Call;
+import ga4gh.Variants.CallSet;
 import ga4gh.Variants.Variant;
 import ga4gh.Variants.VariantSet;
 import org.apache.commons.collections.CollectionUtils;
@@ -22,41 +26,99 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
+ * Exposes Ga4gh variants as a Beacon.
+ * Queries the underlying Ga4gh client and assembles Beacon responses.
+ *
  * @author Artem (tema.voskoboynick@gmail.com)
  * @version 1.0
  */
 @Dependent
 public class VariantsBeaconAdapter implements BeaconAdapter {
 
+    public static final Beacon SAMPLE_BEACON = Beacon.newBuilder()
+            .setId("sample-beacon")
+            .setName("Sample Beacon")
+            .setApiVersion("0.3.0")
+            .setCreateDateTime("01.01.2016")
+            .setUpdateDateTime("01.01.2016")
+            .setOrganization(BeaconOrganization.newBuilder().setId("sample-organization").setName("Sample Organization").build())
+            .build();
+
     private Ga4ghClient ga4ghClient = new Ga4ghClient();
+
+    @Override
+    public void initAdapter(AdapterConfig adapterConfig) {
+        initGa4ghClient(adapterConfig);
+    }
+
+    private void initGa4ghClient(AdapterConfig adapterConfig) {
+        String ga4ghBaseUrl = getGa4ghBaseUrl(adapterConfig);
+        ga4ghClient = ga4ghBaseUrl == null ? new Ga4ghClient() : new Ga4ghClient(ga4ghBaseUrl);
+    }
+
+    private String getGa4ghBaseUrl(AdapterConfig adapterConfig) {
+        List<ConfigValue> configValues = adapterConfig.getConfigValues();
+        ConfigValue ga4ghBaseUrl = Iterables.getFirst(configValues, null);
+        return ga4ghBaseUrl == null ? null : ga4ghBaseUrl.getValue();
+    }
+
+    @Override
+    public Beacon getBeacon() throws BeaconException {
+        return SAMPLE_BEACON;
+    }
 
     @Override
     public BeaconAlleleResponse getBeaconAlleleResponse(BeaconAlleleRequest request) throws BeaconException {
         try {
-            return doGetBeaconAlleleResponse(request);
+            BeaconAlleleResponse response = doGetBeaconAlleleResponse(
+                    request.getReferenceName(),
+                    request.getStart(),
+                    request.getReferenceBases(),
+                    request.getAlternateBases(),
+                    request.getAssemblyId(),
+                    request.getDatasetIds(),
+                    request.getIncludeDatasetResponses()
+            );
+            response.setAlleleRequest(request);
+            return response;
         } catch (BeaconAlleleRequestException e) {
-            //e.setRequest(request);
+            e.setRequest(request);
             throw e;
         }
     }
 
     @Override
-    public Beacon getBeacon() throws BeaconException {
-        return null;
+    public BeaconAlleleResponse getBeaconAlleleResponse(String referenceName, Long start, String referenceBases, String alternateBases, String assemblyId, List<String> datasetIds, Boolean includeDatasetResponses) throws BeaconException {
+        BeaconAlleleRequest request = createRequest(referenceName, start, referenceBases, alternateBases, assemblyId, datasetIds, includeDatasetResponses);
+        return getBeaconAlleleResponse(request);
     }
 
-    private BeaconAlleleResponse doGetBeaconAlleleResponse(BeaconAlleleRequest request) throws BeaconAlleleRequestException {
-        List<String> datasetIds = getDatasetIdsToSearch(request.getDatasetIds());
+    private BeaconAlleleRequest createRequest(String referenceName, Long start, String referenceBases, String alternateBases, String assemblyId, List<String> datasetIds, Boolean includeDatasetResponses) {
+        return BeaconAlleleRequest.newBuilder()
+                .setReferenceName(referenceName)
+                .setStart(start)
+                .setReferenceBases(referenceBases)
+                .setAlternateBases(alternateBases)
+                .setAssemblyId(assemblyId)
+                .setDatasetIds(datasetIds)
+                .setIncludeDatasetResponses(includeDatasetResponses)
+                .build();
+    }
 
-        List<BeaconDatasetAlleleResponse> datasetResponses = map(datasetIds,
-                datasetId -> getDatasetResponse(datasetId, request.getAssemblyId(), request.getReferenceName(),
-                        request.getStart(), request.getReferenceBases(), request.getAlternateBases())
+    private BeaconAlleleResponse doGetBeaconAlleleResponse(String referenceName, Long start, String referenceBases,
+                                                           String alternateBases, String assemblyId, List<String> datasetIds,
+                                                           Boolean includeDatasetResponses) throws BeaconException {
+        List<String> datasetIdsToSearch = getDatasetIdsToSearch(datasetIds);
+
+        List<BeaconDatasetAlleleResponse> datasetResponses = map(datasetIdsToSearch,
+                datasetId -> getDatasetResponse(datasetId, assemblyId, referenceName, start, referenceBases, alternateBases)
         );
 
         List<BeaconDatasetAlleleResponse> returnedDatasetResponses = BooleanUtils
-                .isTrue(request.getIncludeDatasetResponses()) ? datasetResponses : null;
+                .isTrue(includeDatasetResponses) ? datasetResponses : null;
 
         BeaconError anyError = datasetResponses
                 .stream()
@@ -70,13 +132,13 @@ public class VariantsBeaconAdapter implements BeaconAdapter {
                 .anyMatch(BeaconDatasetAlleleResponse::getExists);
 
         BeaconAlleleResponse response = BeaconAlleleResponse.newBuilder()
-                .setAlleleRequest(request)
+                .setAlleleRequest(null)
                 .setDatasetAlleleResponses(returnedDatasetResponses)
-                .setBeaconId("")
+                .setBeaconId(SAMPLE_BEACON.getId())
                 .setError(anyError)
                 .setExists(exists)
                 .build();
-        System.out.println(response);
+
         return response;
     }
 
@@ -92,6 +154,8 @@ public class VariantsBeaconAdapter implements BeaconAdapter {
 
         Double frequency = calculateFrequency(alternateBases, variants);
 
+        Long sampleCount = countSamples(variants);
+
         Long callsCount = variants.stream().collect(Collectors.summingLong(Variant::getCallsCount));
 
         long variantCount = (long) variants.size();
@@ -103,9 +167,27 @@ public class VariantsBeaconAdapter implements BeaconAdapter {
                 .setFrequency(frequency)
                 .setCallCount(callsCount)
                 .setVariantCount(variantCount)
+                .setSampleCount(sampleCount)
                 .setExists(exists)
                 .build();
         return datasetResponse;
+    }
+
+    private Long countSamples(List<Variant> variants) throws BeaconAlleleRequestException {
+        Stream<String> callSetIds = variants
+                .stream()
+                .flatMap(variant -> variant
+                        .getCallsList()
+                        .stream())
+                .map(Call::getCallSetId);
+
+        long sampleCount = map(callSetIds, this::loadCallSet)
+                .stream()
+                .map(CallSet::getBioSampleId)
+                .distinct()
+                .count();
+
+        return sampleCount;
     }
 
     private Double calculateFrequency(String alternateBases, List<Variant> variants) {
@@ -143,8 +225,7 @@ public class VariantsBeaconAdapter implements BeaconAdapter {
 
     private boolean isVariantSetMatchesRequested(VariantSet variantSet, String assemblyId) throws BeaconAlleleRequestException {
         ReferenceSet referenceSet = loadReferenceSet(variantSet.getReferenceSetId());
-        return StringUtils.equals(referenceSet.getAssemblyId(), assemblyId) ||
-                StringUtils.equals(referenceSet.getName(), assemblyId);
+        return StringUtils.equals(referenceSet.getAssemblyId(), assemblyId);
     }
 
     private boolean isVariantMatchesRequested(Variant variant, String referenceBases, String alternateBases) {
@@ -207,49 +288,78 @@ public class VariantsBeaconAdapter implements BeaconAdapter {
         }
     }
 
-    public final <P_OUT, R> List<R> map(List<P_OUT> list,
-                                        FunctionThrowingAlleleRequestException<? super P_OUT, ? extends R> mapper) throws BeaconAlleleRequestException {
+    private CallSet loadCallSet(String id) throws BeaconAlleleRequestException {
+        try {
+            return ga4ghClient.loadCallSet(id);
+        } catch (Ga4ghClientException e) {
+            BeaconAlleleRequestException alleleRequestException = new BeaconAlleleRequestException("Couldn't load call set with id %s.", Reason.CONN_ERR, null);
+            alleleRequestException.initCause(e);
+            throw alleleRequestException;
+        }
+    }
+
+    /**
+     * Works the same way as the Java 8 stream API map method, but can throw {@link BeaconAlleleRequestException}.
+     */
+    public <T, R> List<R> map(List<T> list, FunctionThrowingAlleleRequestException<? super T, ? extends R> mapper)
+            throws BeaconAlleleRequestException {
         List<R> result = new ArrayList<>();
 
-        for (P_OUT aList : list) {
-            result.add(mapper.apply(aList));
+        for (T item : list) {
+            R mapped = mapper.apply(item);
+            result.add(mapped);
         }
 
         return result;
     }
 
-    private <T> void filter(Collection<T> collection, PredicateThrowingAlleleRequestException<? super T> filter) throws BeaconAlleleRequestException {
-        Iterator<T> each = collection.iterator();
-        while (each.hasNext()) {
-            if (!filter.test(each.next())) {
-                each.remove();
+    /**
+     * Works the same way as the Java 8 stream API map method, but can throw {@link BeaconAlleleRequestException}.
+     */
+    public <T, R> List<R> map(Stream<T> stream, FunctionThrowingAlleleRequestException<? super T, ? extends R> mapper)
+            throws BeaconAlleleRequestException {
+        List<R> result = new ArrayList<>();
+
+        Iterator<T> it = stream.iterator();
+        while (it.hasNext()) {
+            R mappedItem = mapper.apply(it.next());
+            result.add(mappedItem);
+        }
+
+        return result;
+    }
+
+    /**
+     * Works the same way as the Java 8 filter API map method, but can throw {@link BeaconAlleleRequestException}.
+     */
+    private <T> void filter(Collection<T> collection, PredicateThrowingAlleleRequestException<? super T> filter)
+            throws BeaconAlleleRequestException {
+        Iterator<T> it = collection.iterator();
+
+        while (it.hasNext()) {
+            T item = it.next();
+
+            if (!filter.test(item)) {
+                it.remove();
             }
         }
     }
 
+    /**
+     * Copy of the the Java 8 function, but can throw {@link BeaconAlleleRequestException}.
+     */
     @FunctionalInterface
     public interface FunctionThrowingAlleleRequestException<T, R> {
 
         R apply(T t) throws BeaconAlleleRequestException;
     }
 
-
+    /**
+     * Copy of the the Java 8 predicate, but can throw {@link BeaconAlleleRequestException}.
+     */
     @FunctionalInterface
     public interface PredicateThrowingAlleleRequestException<T> {
 
         boolean test(T t) throws BeaconAlleleRequestException;
-    }
-
-
-    public static void main(String[] args) throws BeaconException {
-        VariantsBeaconAdapter adapter = new VariantsBeaconAdapter();
-        BeaconAlleleRequest request = BeaconAlleleRequest.newBuilder()
-                .setReferenceName("1")
-                .setStart(0)
-                .setReferenceBases("")
-                .setAlternateBases("")
-                .setAssemblyId("NCBI37")
-                .build();
-        adapter.getBeaconAlleleResponse(request);
     }
 }

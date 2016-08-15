@@ -14,10 +14,11 @@ import retrofit2.Retrofit;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 
 /**
+ * A simple converter Json <-> protobuf DTOs.
+ *
  * @author Artem (tema.voskoboynick@gmail.com)
  * @version 1.0
  */
@@ -40,7 +41,7 @@ public class ProtoJsonConverter extends Converter.Factory {
             }
 
             private GeneratedMessage.Builder createBuilder(Class<?> clazz) {
-                try{
+                try {
                     return (GeneratedMessage.Builder) MethodUtils.invokeStaticMethod(clazz, "newBuilder");
                 } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
                     throw new RuntimeException("Couldn't create builder", e);
