@@ -12,8 +12,11 @@ import static org.assertj.core.api.Assertions.assertThat
  * @author Artem (tema.voskoboynick@gmail.com)
  * @version 1.0
  */
-class BeaconResponse extends BaseTest {
+class BeaconResponseProvidedDatasetsTest extends BaseTest {
 
+    /**
+     * Sends requests with specified dataset ids.
+     */
     @Override
     void doTest() {
         def referenceName = SEARCH_VARIANTS_TEST_REQUEST.referenceName
@@ -21,8 +24,8 @@ class BeaconResponse extends BaseTest {
         def referenceBases = TEST_VARIANT.referenceBases
         def alternateBases = TEST_VARIANT.getAlternateBases(0)
         def assemblyId = TEST_REFERENCE_SET.assemblyId
-        def datasetIds = null
         def includeDatasetResponses = true
+        def datasetIds = [TEST_DATASET.id]
 
         BeaconAlleleRequest request = BeaconAlleleRequest.newBuilder()
                 .setReferenceName(referenceName)
@@ -39,7 +42,7 @@ class BeaconResponse extends BaseTest {
     }
 
     private void testGetMethod(BeaconAlleleRequest request) {
-        BeaconAlleleResponse getMethodResponse = ADAPTER.getBeaconAlleleResponse(
+        BeaconAlleleResponse getMethodResponse = BaseTest.ADAPTER.getBeaconAlleleResponse(
                 request.getReferenceName(),
                 request.getStart(),
                 request.getReferenceBases(),
@@ -51,7 +54,7 @@ class BeaconResponse extends BaseTest {
     }
 
     private void testPostMethod(BeaconAlleleRequest request) {
-        BeaconAlleleResponse postMethodResponse = ADAPTER.getBeaconAlleleResponse(request);
+        BeaconAlleleResponse postMethodResponse = BaseTest.ADAPTER.getBeaconAlleleResponse(request);
         checkAssertions(postMethodResponse, request)
     }
 

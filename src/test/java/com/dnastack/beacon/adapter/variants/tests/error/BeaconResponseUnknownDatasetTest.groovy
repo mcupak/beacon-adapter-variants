@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown
  * @author Artem (tema.voskoboynick@gmail.com)
  * @version 1.0
  */
-class BeaconResponseUnknownDataset extends BaseTest {
+class BeaconResponseUnknownDatasetTest extends BaseTest {
 
     /**
      * Test that requesting unknown datasets causes {@link BeaconException}.

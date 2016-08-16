@@ -12,10 +12,11 @@ import static org.assertj.core.api.Assertions.assertThat
  * @author Artem (tema.voskoboynick@gmail.com)
  * @version 1.0
  */
-class BeaconResponseProvidedDatasets extends BaseTest {
+class BeaconResponseWithoutDatasetResponsesTest extends BaseTest {
 
     /**
-     * Sends requests with specified dataset ids.
+     * Test the response doesn't contain individual dataset responses,
+     * when the flag includeDatasetResponses is set to false in the request.
      */
     @Override
     void doTest() {
@@ -24,8 +25,8 @@ class BeaconResponseProvidedDatasets extends BaseTest {
         def referenceBases = TEST_VARIANT.referenceBases
         def alternateBases = TEST_VARIANT.getAlternateBases(0)
         def assemblyId = TEST_REFERENCE_SET.assemblyId
-        def includeDatasetResponses = true
-        def datasetIds = [TEST_DATASET.id]
+        def datasetIds = null
+        def includeDatasetResponses = false
 
         BeaconAlleleRequest request = BeaconAlleleRequest.newBuilder()
                 .setReferenceName(referenceName)
@@ -42,7 +43,7 @@ class BeaconResponseProvidedDatasets extends BaseTest {
     }
 
     private void testGetMethod(BeaconAlleleRequest request) {
-        BeaconAlleleResponse getMethodResponse = BaseTest.ADAPTER.getBeaconAlleleResponse(
+        BeaconAlleleResponse getMethodResponse = ADAPTER.getBeaconAlleleResponse(
                 request.getReferenceName(),
                 request.getStart(),
                 request.getReferenceBases(),
@@ -54,24 +55,15 @@ class BeaconResponseProvidedDatasets extends BaseTest {
     }
 
     private void testPostMethod(BeaconAlleleRequest request) {
-        BeaconAlleleResponse postMethodResponse = BaseTest.ADAPTER.getBeaconAlleleResponse(request);
+        BeaconAlleleResponse postMethodResponse = ADAPTER.getBeaconAlleleResponse(request);
         checkAssertions(postMethodResponse, request)
     }
 
     private void checkAssertions(BeaconAlleleResponse response, BeaconAlleleRequest request) {
         assertThat(response.alleleRequest).isEqualTo(request)
         assertThat(response.beaconId).isEqualTo(VariantsBeaconAdapter.SAMPLE_BEACON.id)
-        assertThat(response.datasetAlleleResponses).hasSize(1)
+        assertThat(response.datasetAlleleResponses).isNull()
         assertThat(response.error).isNull()
         assertThat(response.exists).isTrue()
-
-        def datasetResponse = response.datasetAlleleResponses.get(0)
-        assertThat(datasetResponse.error).isNull()
-        assertThat(datasetResponse.exists).isTrue()
-        assertThat(datasetResponse.callCount).isEqualTo(TEST_VARIANT.callsCount)
-        assertThat(datasetResponse.datasetId).isEqualTo(TEST_DATASET.id)
-        assertThat(datasetResponse.frequency).isEqualTo(0.25d) // 4 total genotypes, only 1 matches (see test calls).
-        assertThat(datasetResponse.sampleCount).isEqualTo(2) // 2 call sets with 2 distinct bio samples
-        assertThat(datasetResponse.variantCount).isEqualTo(1) // 1 test variant
     }
 }
