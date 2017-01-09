@@ -5,7 +5,6 @@ import ga4gh.VariantServiceOuterClass.SearchVariantSetsRequest;
 import ga4gh.VariantServiceOuterClass.SearchVariantSetsResponse;
 import ga4gh.VariantServiceOuterClass.SearchVariantsRequest;
 import ga4gh.VariantServiceOuterClass.SearchVariantsResponse;
-import ga4gh.Variants;
 import ga4gh.Variants.CallSet;
 import retrofit2.Call;
 import retrofit2.http.Body;
@@ -18,10 +17,12 @@ import static ga4gh.MetadataServiceOuterClass.SearchDatasetsResponse;
 
 /**
  * @author Artem (tema.voskoboynick@gmail.com)
+ * @author Miro Cupak (mirocupak@gmail.com)
  * @version 1.0
  */
 
 public interface Ga4ghRetroService {
+
     String DATASET_SEARCH_PATH = "datasets/search";
     String VARIANT_SETS_SEARCH_PATH = "variantsets/search";
     String VARIANTS_SEARCH_PATH = "variants/search";

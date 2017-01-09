@@ -20,9 +20,32 @@ import java.lang.reflect.Type;
  * A simple converter Json <-> protobuf DTOs.
  *
  * @author Artem (tema.voskoboynick@gmail.com)
+ * @author Miro Cupak (mirocupak@gmail.com)
  * @version 1.0
  */
 public class ProtoJsonConverter extends Converter.Factory {
+
+    public static ProtoJsonConverter create() {
+        return new ProtoJsonConverter();
+    }
+
+    private boolean isConvertible(Type type) {
+        return getConvertibleClass(type) != null;
+    }
+
+    private Class<?> getConvertibleClass(Type type) {
+        if (!(type instanceof Class)) {
+            return null;
+        }
+
+        Class<?> clazz = (Class) type;
+        if (!(MessageLite.class.isAssignableFrom(clazz))) {
+            return null;
+        }
+
+        return clazz;
+    }
+
     @Override
     public Converter<ResponseBody, ?> responseBodyConverter(Type type, Annotation[] annotations, Retrofit retrofit) {
         Class<?> clazz = getConvertibleClass(type);
@@ -31,14 +54,6 @@ public class ProtoJsonConverter extends Converter.Factory {
         }
 
         return new Converter<ResponseBody, Object>() {
-            @Override
-            public Object convert(ResponseBody responseBody) throws IOException {
-                String json = responseBody.string();
-                GeneratedMessage.Builder builder = createBuilder(clazz);
-                JsonFormat.parser().merge(json, builder);
-
-                return builder.build();
-            }
 
             private GeneratedMessage.Builder createBuilder(Class<?> clazz) {
                 try {
@@ -46,6 +61,15 @@ public class ProtoJsonConverter extends Converter.Factory {
                 } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
                     throw new RuntimeException("Couldn't create builder", e);
                 }
+            }
+
+            @Override
+            public Object convert(ResponseBody responseBody) throws IOException {
+                String json = responseBody.string();
+                GeneratedMessage.Builder builder = createBuilder(clazz);
+                JsonFormat.parser().merge(json, builder);
+
+                return builder.build();
             }
         };
     }
@@ -67,26 +91,5 @@ public class ProtoJsonConverter extends Converter.Factory {
     @Override
     public Converter<?, String> stringConverter(Type type, Annotation[] annotations, Retrofit retrofit) {
         return super.stringConverter(type, annotations, retrofit);
-    }
-
-    private boolean isConvertible(Type type) {
-        return getConvertibleClass(type) != null;
-    }
-
-    private Class<?> getConvertibleClass(Type type) {
-        if (!(type instanceof Class)) {
-            return null;
-        }
-
-        Class<?> clazz = (Class) type;
-        if (!(MessageLite.class.isAssignableFrom(clazz))) {
-            return null;
-        }
-
-        return clazz;
-    }
-
-    public static ProtoJsonConverter create() {
-        return new ProtoJsonConverter();
     }
 }

@@ -3,7 +3,6 @@ package com.dnastack.beacon.adapter.variants.tests.error
 import com.dnastack.beacon.adapter.variants.BaseTest
 import com.dnastack.beacon.exceptions.BeaconException
 import org.ga4gh.beacon.BeaconAlleleRequest
-import org.ga4gh.beacon.BeaconAlleleResponse
 
 import static com.dnastack.beacon.adapter.variants.TestData.*
 import static org.assertj.core.api.Assertions.assertThat
@@ -11,6 +10,7 @@ import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown
 
 /**
  * @author Artem (tema.voskoboynick@gmail.com)
+ * @author Miro Cupak (mirocupak@gmail.com)
  * @version 1.0
  */
 class BeaconResponseUnknownDatasetTest extends BaseTest {

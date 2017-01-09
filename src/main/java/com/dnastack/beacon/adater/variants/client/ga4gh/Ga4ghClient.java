@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
  * Executes requests to the given Ga4gh server.
  *
  * @author Artem (tema.voskoboynick@gmail.com)
+ * @author Miro Cupak (mirocupak@gmail.com)
  * @version 1.0
  */
 public class Ga4ghClient {
@@ -39,6 +40,16 @@ public class Ga4ghClient {
     public static final String DEFAULT_BASE_URL = "http://1kgenomes.ga4gh.org/";
 
     private Ga4ghRetroService ga4ghRetroService;
+
+    /**
+     * A function that returns a single response page for the given request and throws {@link Ga4ghClientException} on
+     * any IO error. In fact, this is just a copy of the the Java 8 function, but that throws {@link Ga4ghClientException}.
+     */
+    @FunctionalInterface
+    private interface RequestExecutor<REQUEST, RESPONSE> {
+
+        RESPONSE execute(REQUEST request) throws Ga4ghClientException;
+    }
 
     /**
      * Creates a Ga4gh client with the default
@@ -55,74 +66,6 @@ public class Ga4ghClient {
         setBaseUrl(baseUrl);
     }
 
-    public void setBaseUrl(String baseUrl) {
-        Preconditions.checkArgument(StringUtils.isNotBlank(baseUrl), "baseUrl mustn't be null or empty.");
-        ga4ghRetroService = Ga4ghRetroServiceFactory.create(baseUrl);
-    }
-
-    public List<Dataset> searchDatasets() throws Ga4ghClientException {
-        SearchDatasetsRequest request = SearchDatasetsRequest.newBuilder().build();
-
-        List<SearchDatasetsResponse> allResponsePages =  requestAllResponsePages(request,
-                 pagedRequest ->  executeCall(ga4ghRetroService.searchDatasets(pagedRequest)));
-
-        List<Dataset> allDatasets = allResponsePages
-                .stream()
-                .flatMap(responsePage -> responsePage
-                        .getDatasetsList()
-                        .stream()
-                )
-                .collect(Collectors.toList());
-        return allDatasets;
-    }
-
-    public List<Variant> searchVariants(String variantSetId, String referenceName, long start) throws Ga4ghClientException {
-        SearchVariantsRequest request = SearchVariantsRequest.newBuilder()
-                .setVariantSetId(variantSetId)
-                .setReferenceName(referenceName)
-                .setStart(start)
-                .setEnd(start + 1)
-                .build();
-
-        List<SearchVariantsResponse> allResponsePages = requestAllResponsePages(request,
-                pagedRequest -> executeCall(ga4ghRetroService.searchVariants(pagedRequest)));
-
-        List<Variant> variants = allResponsePages
-                .stream()
-                .flatMap(responsePage -> responsePage
-                        .getVariantsList()
-                        .stream()
-                )
-                .collect(Collectors.toList());
-        return variants;
-    }
-
-    public List<VariantSet> searchVariantSets(String datasetId) throws Ga4ghClientException {
-        SearchVariantSetsRequest request = SearchVariantSetsRequest.newBuilder()
-                .setDatasetId(datasetId)
-                .build();
-
-        List<SearchVariantSetsResponse> allResponsePages = requestAllResponsePages(request,
-                pagedRequest -> executeCall(ga4ghRetroService.searchVariantSets(pagedRequest)));
-
-        List<VariantSet> variantSets = allResponsePages
-                .stream()
-                .flatMap(responsePage -> responsePage
-                        .getVariantSetsList()
-                        .stream()
-                )
-                .collect(Collectors.toList());
-        return variantSets;
-    }
-
-    public ReferenceSet loadReferenceSet(String id) throws Ga4ghClientException {
-        return executeCall(ga4ghRetroService.loadReferenceSet(id));
-    }
-
-    public CallSet loadCallSet(String id) throws Ga4ghClientException {
-        return executeCall(ga4ghRetroService.loadCallSet(id));
-    }
-
     private <T> T executeCall(Call<T> call) throws Ga4ghClientException {
         Response<T> response;
         try {
@@ -134,7 +77,8 @@ public class Ga4ghClient {
         if (response.isSuccessful()) {
             return response.body();
         } else {
-            throw new Ga4ghClientException(String.format("Received error response from server. HTTP code: %s", response.code()));
+            throw new Ga4ghClientException(String.format("Received error response from server. HTTP code: %s",
+                                                         response.code()));
         }
     }
 
@@ -144,8 +88,7 @@ public class Ga4ghClient {
      * @return list of all response pages
      * @throws Ga4ghClientException on IO error
      */
-    private <REQUEST extends GeneratedMessage, RESPONSE> List<RESPONSE> requestAllResponsePages(REQUEST request,
-                                                                                                RequestExecutor<REQUEST, RESPONSE> requestExecutor) throws Ga4ghClientException {
+    private <REQUEST extends GeneratedMessage, RESPONSE> List<RESPONSE> requestAllResponsePages(REQUEST request, RequestExecutor<REQUEST, RESPONSE> requestExecutor) throws Ga4ghClientException {
         List<RESPONSE> responsePages = new ArrayList<>();
 
         Builder requestBuilder = request.toBuilder();
@@ -160,9 +103,7 @@ public class Ga4ghClient {
         return responsePages;
     }
 
-    private <REQUEST extends GeneratedMessage, RESPONSE> RESPONSE loadResponsePage(Builder requestBuilder,
-                                                                                   RequestExecutor<REQUEST, RESPONSE> requestExecutor,
-                                                                                   String nextPageToken) throws Ga4ghClientException {
+    private <REQUEST extends GeneratedMessage, RESPONSE> RESPONSE loadResponsePage(Builder requestBuilder, RequestExecutor<REQUEST, RESPONSE> requestExecutor, String nextPageToken) throws Ga4ghClientException {
         invokeMethod(requestBuilder, "setPageToken", nextPageToken);
         //noinspection unchecked
         REQUEST requestWithPageToken = (REQUEST) requestBuilder.build();
@@ -178,12 +119,64 @@ public class Ga4ghClient {
         }
     }
 
-    /**
-     * A function that returns a single response page for the given request and throws {@link Ga4ghClientException} on
-     * any IO error. In fact, this is just a copy of the the Java 8 function, but that throws {@link Ga4ghClientException}.
-     */
-    @FunctionalInterface
-    private interface RequestExecutor<REQUEST, RESPONSE> {
-        RESPONSE execute(REQUEST request) throws Ga4ghClientException;
+    public void setBaseUrl(String baseUrl) {
+        Preconditions.checkArgument(StringUtils.isNotBlank(baseUrl), "baseUrl mustn't be null or empty.");
+        ga4ghRetroService = Ga4ghRetroServiceFactory.create(baseUrl);
+    }
+
+    public List<Dataset> searchDatasets() throws Ga4ghClientException {
+        SearchDatasetsRequest request = SearchDatasetsRequest.newBuilder().build();
+
+        List<SearchDatasetsResponse> allResponsePages = requestAllResponsePages(request,
+                                                                                pagedRequest -> executeCall(
+                                                                                        ga4ghRetroService.searchDatasets(
+                                                                                                pagedRequest)));
+
+        List<Dataset> allDatasets = allResponsePages.stream()
+                                                    .flatMap(responsePage -> responsePage.getDatasetsList().stream())
+                                                    .collect(Collectors.toList());
+        return allDatasets;
+    }
+
+    public List<Variant> searchVariants(String variantSetId, String referenceName, long start) throws Ga4ghClientException {
+        SearchVariantsRequest request = SearchVariantsRequest.newBuilder()
+                                                             .setVariantSetId(variantSetId)
+                                                             .setReferenceName(referenceName)
+                                                             .setStart(start)
+                                                             .setEnd(start + 1)
+                                                             .build();
+
+        List<SearchVariantsResponse> allResponsePages = requestAllResponsePages(request,
+                                                                                pagedRequest -> executeCall(
+                                                                                        ga4ghRetroService.searchVariants(
+                                                                                                pagedRequest)));
+
+        List<Variant> variants = allResponsePages.stream()
+                                                 .flatMap(responsePage -> responsePage.getVariantsList().stream())
+                                                 .collect(Collectors.toList());
+        return variants;
+    }
+
+    public List<VariantSet> searchVariantSets(String datasetId) throws Ga4ghClientException {
+        SearchVariantSetsRequest request = SearchVariantSetsRequest.newBuilder().setDatasetId(datasetId).build();
+
+        List<SearchVariantSetsResponse> allResponsePages = requestAllResponsePages(request,
+                                                                                   pagedRequest -> executeCall(
+                                                                                           ga4ghRetroService.searchVariantSets(
+                                                                                                   pagedRequest)));
+
+        List<VariantSet> variantSets = allResponsePages.stream()
+                                                       .flatMap(responsePage -> responsePage.getVariantSetsList()
+                                                                                            .stream())
+                                                       .collect(Collectors.toList());
+        return variantSets;
+    }
+
+    public ReferenceSet loadReferenceSet(String id) throws Ga4ghClientException {
+        return executeCall(ga4ghRetroService.loadReferenceSet(id));
+    }
+
+    public CallSet loadCallSet(String id) throws Ga4ghClientException {
+        return executeCall(ga4ghRetroService.loadCallSet(id));
     }
 }
