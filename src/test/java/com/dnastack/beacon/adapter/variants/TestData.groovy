@@ -19,22 +19,22 @@ public class TestData {
 
     def public static final TEST_CALL_SET_1 = CallSet.newBuilder()
             .setId("test-callset-1")
-            .setBioSampleId("test-bio-sample-1")
+            .setBiosampleId("test-bio-sample-1")
             .build()
 
     def public static final TEST_CALL_SET_2 = CallSet.newBuilder()
             .setId("test-callset-2")
-            .setBioSampleId("test-bio-sample-2")
+            .setBiosampleId("test-bio-sample-2")
             .build()
 
     def public static final TEST_CALL_1 = Call.newBuilder()
             .setCallSetId(TEST_CALL_SET_1.id)
-            .addAllGenotype([1, 2])
+            .addAllGenotypeLikelihood([Double.valueOf(1), Double.valueOf(2)])
             .build()
 
     def public static final TEST_CALL_2 = Call.newBuilder()
             .setCallSetId(TEST_CALL_SET_2.id)
-            .addAllGenotype([3, 4])
+            .addAllGenotypeLikelihood([Double.valueOf(3), Double.valueOf(4)])
             .build()
 
     def public static final TEST_VARIANT = Variant.newBuilder()
