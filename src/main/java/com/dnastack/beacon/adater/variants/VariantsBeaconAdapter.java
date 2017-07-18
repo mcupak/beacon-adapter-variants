@@ -9,6 +9,7 @@ import com.dnastack.beacon.utils.AdapterConfig;
 import com.dnastack.beacon.utils.ConfigValue;
 import com.dnastack.beacon.utils.Reason;
 import com.google.common.collect.Iterables;
+import com.google.protobuf.ListValue;
 import ga4gh.Metadata.Dataset;
 import ga4gh.References.ReferenceSet;
 import ga4gh.Variants.Call;
@@ -193,7 +194,8 @@ public class VariantsBeaconAdapter implements BeaconAdapter {
 
         Long totalGenotypesCount = variants.stream()
                 .flatMap(variant -> variant.getCallsList().stream())
-                .mapToLong(Call::getGenotypeLikelihoodCount).sum();
+                .map(Call::getGenotype)
+                .mapToLong(ListValue::getValuesCount).sum();
 
         return (totalGenotypesCount == 0) ? null : ((double) matchingGenotypesCount / totalGenotypesCount);
     }
@@ -202,9 +204,9 @@ public class VariantsBeaconAdapter implements BeaconAdapter {
         int requestedGenotype = variant.getAlternateBasesList().indexOf(alternateBases) + 1;
         return variant.getCallsList()
                 .stream()
-                .map(Call::getGenotypeLikelihoodList)
-                .flatMap(List::stream)
-                .filter(genotype -> genotype.equals(Double.valueOf(requestedGenotype)))
+                .map(Call::getGenotype)
+                .flatMap(listValue -> listValue.getValuesList().stream())
+                .filter(genotype -> genotype.getNumberValue() == (double) requestedGenotype)
                 .count();
     }
 
