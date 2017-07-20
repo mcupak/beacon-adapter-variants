@@ -1,13 +1,11 @@
 package com.dnastack.beacon.adapter.variants.tests.successful
 
 import com.dnastack.beacon.adapter.variants.BaseTest
-import com.dnastack.beacon.adater.variants.VariantsBeaconAdapter
 import org.ga4gh.beacon.BeaconAlleleRequest
 import org.ga4gh.beacon.BeaconAlleleResponse
 
 import static com.dnastack.beacon.adapter.variants.TestData.*
 import static org.assertj.core.api.Assertions.assertThat
-
 /**
  * @author Artem (tema.voskoboynick@gmail.com)
  * @version 1.0
@@ -61,7 +59,7 @@ class BeaconResponseWithoutDatasetResponsesTest extends BaseTest {
 
     private void checkAssertions(BeaconAlleleResponse response, BeaconAlleleRequest request) {
         assertThat(response.alleleRequest).isEqualTo(request)
-        assertThat(response.beaconId).isEqualTo(VariantsBeaconAdapter.SAMPLE_BEACON.id)
+        assertThat(response.beaconId).isEqualTo(ADAPTER.getBeacon().getId())
         assertThat(response.datasetAlleleResponses).isNull()
         assertThat(response.error).isNull()
         assertThat(response.exists).isTrue()
