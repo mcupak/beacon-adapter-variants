@@ -17,7 +17,6 @@ import static com.dnastack.beacon.adapter.variants.TestData.*
 import static com.dnastack.beacon.adater.variants.client.ga4gh.retro.Ga4ghRetroService.*
 import static com.github.tomakehurst.wiremock.client.WireMock.*
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
-
 /**
  * Helper class for variants adapter tests.
  * </p>
@@ -38,6 +37,7 @@ public abstract class BaseTest {
     static final def MOCK_GA4GH_SERVER = new WireMockServer(wireMockConfig().port(MOCK_GA4GH_PORT))
     static final VariantsBeaconAdapter ADAPTER
     static final boolean MOCKED_TESTING
+    private final static String BEACON_FILE = "test_beacon.json";
 
 /**
  * Define if the testing will be against a real Ga4gh server, or the mocked one.
@@ -48,11 +48,13 @@ public abstract class BaseTest {
 
         // Adapter initialization.
 
+        ClassLoader cl = VariantsBeaconAdapter.class.getClassLoader();
+        String beaconJson = cl.getResource(BEACON_FILE).toURI().getPath();
+
         ADAPTER = new VariantsBeaconAdapter()
 
-        def configValues = MOCKED_TESTING ?
-                [new ConfigValue("variants-url", "http://localhost:$MOCK_GA4GH_PORT/")] :
-                []
+        def configValues = [new ConfigValue("beaconJsonFile", beaconJson)]
+
         def adapterConfig = new AdapterConfig("Variants Test Adapter", VariantsBeaconAdapter.getName(), configValues)
         ADAPTER.initAdapter(adapterConfig)
     }
