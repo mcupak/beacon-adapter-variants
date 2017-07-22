@@ -174,4 +174,9 @@ public class Ga4ghClient {
     public CallSet loadCallSet(String datasetId, String callSetId) throws Ga4ghClientException {
         return executeCall(ga4ghRetroServices.get(datasetId).loadCallSet(callSetId));
     }
+
+    public boolean isExistDataset(String datasetId) {
+        return ga4ghRetroServices.get(datasetId) != null;
+    }
+
 }

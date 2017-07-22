@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Exposes Ga4gh variants as a Beacon.
@@ -78,7 +77,7 @@ public class VariantsBeaconAdapter implements BeaconAdapter {
 
         if (beacon == null) {
             throw new RuntimeException(
-                    "Missing required parameter: beaconJson. Please add the appropriate configuration paramter then retry");
+                    "Missing required parameter: beaconJson. Please add the appropriate configuration parameter then retry");
         }
 
         ga4ghClient = new Ga4ghClient(beacon);
@@ -122,44 +121,13 @@ public class VariantsBeaconAdapter implements BeaconAdapter {
                 .build();
     }
 
-    private BeaconAlleleResponse doGetBeaconAlleleResponse(String referenceName,
-                                                           Long start,
-                                                           String referenceBases,
-                                                           String alternateBases,
-                                                           String assemblyId,
-                                                           List<String> datasetIds,
-                                                           Boolean includeDatasetResponses) throws BeaconException {
-        List<String> datasetIdsToSearch = getDatasetIdsToSearch(datasetIds);
-
-        List<BeaconDatasetAlleleResponse> datasetResponses = map(datasetIdsToSearch,
-                datasetId -> getDatasetResponse(datasetId,
-                        assemblyId,
-                        referenceName,
-                        start,
-                        referenceBases,
-                        alternateBases));
-
-        List<BeaconDatasetAlleleResponse> returnedDatasetResponses = BooleanUtils.isTrue(includeDatasetResponses)
-                ? datasetResponses
-                : null;
-
-        BeaconError anyError = datasetResponses.stream()
-                .map(BeaconDatasetAlleleResponse::getError)
-                .filter(Objects::nonNull)
-                .findAny()
-                .orElse(null);
-
-        Boolean exists = anyError != null
-                ? null
-                : datasetResponses.stream().anyMatch(BeaconDatasetAlleleResponse::getExists);
-
-        return BeaconAlleleResponse.newBuilder()
-                .setAlleleRequest(null)
-                .setDatasetAlleleResponses(returnedDatasetResponses)
-                .setBeaconId(getBeacon().getId())
-                .setError(anyError)
-                .setExists(exists)
-                .build();
+    private BeaconDatasetAlleleResponse doGetBeaconAlleleResponse(String referenceName,
+                                                                  Long start,
+                                                                  String referenceBases,
+                                                                  String alternateBases,
+                                                                  String assemblyId,
+                                                                  String datasetId) throws BeaconAlleleRequestException {
+        return getDatasetResponse(datasetId, assemblyId, referenceName, start, referenceBases, alternateBases);
     }
 
     private BeaconDatasetAlleleResponse getDatasetResponse(String datasetId,
@@ -186,9 +154,11 @@ public class VariantsBeaconAdapter implements BeaconAdapter {
 
         Long sampleCount = countSamples(datasetId, variants);
 
-        Long callsCount = variants.stream().mapToLong(Variant::getCallsCount).sum();
+        Long callsCount = variants.stream()
+                .mapToLong(Variant::getCallsCount)
+                .sum();
 
-        long variantCount = (long) variants.size();
+        long variantCount = variants.size();
 
         boolean exists = CollectionUtils.isNotEmpty(variants);
 
@@ -214,7 +184,10 @@ public class VariantsBeaconAdapter implements BeaconAdapter {
             callSets.add(loadCallSet(datasetId, callSetId));
         }
 
-        return callSets.stream().map(CallSet::getBiosampleId).distinct().count();
+        return callSets.stream()
+                .map(CallSet::getBiosampleId)
+                .distinct()
+                .count();
     }
 
     private Double calculateFrequency(String alternateBases, List<Variant> variants) {
@@ -233,6 +206,7 @@ public class VariantsBeaconAdapter implements BeaconAdapter {
 
     private long calculateMatchingGenotypesCount(Variant variant, String alternateBases) {
         int requestedGenotype = variant.getAlternateBasesList().indexOf(alternateBases) + 1;
+
         return variant.getCallsList()
                 .stream()
                 .map(Call::getGenotype)
@@ -307,7 +281,7 @@ public class VariantsBeaconAdapter implements BeaconAdapter {
 
     private ReferenceSet loadReferenceSet(String datasetId, String referenceSetId) throws BeaconAlleleRequestException {
         try {
-            return ga4ghClient.loadReferenceSet(datasetId ,referenceSetId);
+            return ga4ghClient.loadReferenceSet(datasetId, referenceSetId);
         } catch (Ga4ghClientException e) {
             BeaconAlleleRequestException alleleRequestException = new BeaconAlleleRequestException(
                     "Couldn't load reference set with id %s.",
@@ -367,16 +341,46 @@ public class VariantsBeaconAdapter implements BeaconAdapter {
     @Override
     public BeaconAlleleResponse getBeaconAlleleResponse(BeaconAlleleRequest request) throws BeaconException {
         checkAdapterInit();
+
         try {
-            BeaconAlleleResponse response = doGetBeaconAlleleResponse(request.getReferenceName(),
-                    request.getStart(),
-                    request.getReferenceBases(),
-                    request.getAlternateBases(),
-                    request.getAssemblyId(),
-                    request.getDatasetIds(),
-                    request.getIncludeDatasetResponses());
-            response.setAlleleRequest(request);
-            return response;
+            List<String> datasetIdsToSearch = getDatasetIdsToSearch(request.getDatasetIds());
+
+            for (String dataset : datasetIdsToSearch) {
+                if (!ga4ghClient.isExistDataset(dataset)) {
+                    throw new BeaconException(dataset);
+                }
+            }
+
+            List<BeaconDatasetAlleleResponse> datasetResponses = map(datasetIdsToSearch, datasetId ->
+                    doGetBeaconAlleleResponse(request.getReferenceName(),
+                            request.getStart(),
+                            request.getReferenceBases(),
+                            request.getAlternateBases(),
+                            request.getAssemblyId(),
+                            datasetId));
+
+            List<BeaconDatasetAlleleResponse> returnedDatasetResponses = BooleanUtils.isTrue(request.getIncludeDatasetResponses())
+                    ? datasetResponses
+                    : null;
+
+            BeaconError anyError = datasetResponses.stream()
+                    .map(BeaconDatasetAlleleResponse::getError)
+                    .filter(Objects::nonNull)
+                    .findAny()
+                    .orElse(null);
+
+            Boolean exists = anyError != null
+                    ? null
+                    : datasetResponses.stream().anyMatch(BeaconDatasetAlleleResponse::getExists);
+
+            return BeaconAlleleResponse.newBuilder()
+                    .setAlleleRequest(request)
+                    .setDatasetAlleleResponses(returnedDatasetResponses)
+                    .setBeaconId(getBeacon().getId())
+                    .setError(anyError)
+                    .setExists(exists)
+                    .build();
+
         } catch (BeaconAlleleRequestException e) {
             e.setRequest(request);
             throw e;
@@ -401,7 +405,7 @@ public class VariantsBeaconAdapter implements BeaconAdapter {
     /**
      * Works the same way as the Java 8 stream API map method, but can throw {@link BeaconAlleleRequestException}.
      */
-    public <T, R> List<R> map(List<T> list, FunctionThrowingAlleleRequestException<? super T, ? extends R> mapper) throws BeaconAlleleRequestException {
+    private <T, R> List<R> map(List<T> list, FunctionThrowingAlleleRequestException<? super T, ? extends R> mapper) throws BeaconAlleleRequestException {
         List<R> result = new ArrayList<>();
 
         for (T item : list) {
@@ -412,18 +416,4 @@ public class VariantsBeaconAdapter implements BeaconAdapter {
         return result;
     }
 
-    /**
-     * Works the same way as the Java 8 stream API map method, but can throw {@link BeaconAlleleRequestException}.
-     */
-    public <T, R> List<R> map(Stream<T> stream, FunctionThrowingAlleleRequestException<? super T, ? extends R> mapper) throws BeaconAlleleRequestException {
-        List<R> result = new ArrayList<>();
-
-        Iterator<T> it = stream.iterator();
-        while (it.hasNext()) {
-            R mappedItem = mapper.apply(it.next());
-            result.add(mappedItem);
-        }
-
-        return result;
-    }
 }
