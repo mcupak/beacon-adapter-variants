@@ -1,10 +1,10 @@
 package com.dnastack.beacon.adapter.variants.tests.error
 
 import com.dnastack.beacon.adapter.variants.BaseTest
+import com.dnastack.beacon.adapter.variants.TestData
 import com.dnastack.beacon.exceptions.BeaconException
 import org.ga4gh.beacon.BeaconAlleleRequest
 
-import static com.dnastack.beacon.adapter.variants.TestData.*
 import static org.assertj.core.api.Assertions.assertThat
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown
 
@@ -20,11 +20,11 @@ class BeaconResponseUnknownDatasetTest extends BaseTest {
      */
     @Override
     void doTest() {
-        def referenceName = SEARCH_VARIANTS_TEST_REQUEST.referenceName
-        def start = SEARCH_VARIANTS_TEST_REQUEST.start
-        def referenceBases = TEST_VARIANT.referenceBases
-        def alternateBases = TEST_VARIANT.getAlternateBases(0)
-        def assemblyId = TEST_REFERENCE_SET.assemblyId
+        def referenceName = TestData.SEARCH_VARIANTS_TEST_REQUEST.referenceName
+        def start = TestData.SEARCH_VARIANTS_TEST_REQUEST.start
+        def referenceBases = TestData.TEST_VARIANT.referenceBases
+        def alternateBases = TestData.TEST_VARIANT.getAlternateBases(0)
+        def assemblyId = TestData.TEST_REFERENCE_SET.assemblyId
         def datasetIds = ["unknown-dataset"]
         def includeDatasetResponses = true
 
