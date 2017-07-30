@@ -27,7 +27,6 @@
         <version.surfire>2.19.1</version.surfire>
         <version.assertj>3.4.1</version.assertj>
         <version.commons.collection>3.2.2</version.commons.collection>
-        <version.avro>1.8.0</version.avro>
         <version.jacoco>0.7.9</version.jacoco>
         <jacoco.percentage.instruction>0.16</jacoco.percentage.instruction>
         <jacoco.percentage.complexity>0.60</jacoco.percentage.complexity>
@@ -100,11 +99,6 @@
             <groupId>commons-collections</groupId>
             <artifactId>commons-collections</artifactId>
             <version>${version.commons.collection}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.avro</groupId>
-            <artifactId>avro</artifactId>
-            <version>${version.avro}</version>
         </dependency>
     </dependencies>
 
