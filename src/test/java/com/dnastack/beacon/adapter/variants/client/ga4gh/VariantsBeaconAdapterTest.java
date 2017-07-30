@@ -29,10 +29,9 @@ public class VariantsBeaconAdapterTest {
         try {
             String beaconJson = cl.getResource(BEACON_FILE).toURI().getPath();
             List<ConfigValue> values = new ArrayList<>();
+            values.add(ConfigValue.builder().name("beaconJsonFile").value(beaconJson).build());
 
-            values.add(new ConfigValue("beaconJsonFile", beaconJson));
-
-            return new AdapterConfig("variants_test_beacon", AdapterConfig.class.getCanonicalName(), values);
+            return AdapterConfig.builder().name("variants_test_beacon").adapterClass(AdapterConfig.class.getCanonicalName()).configValues(values).build();
         } catch (URISyntaxException e) {
             throw new NullPointerException(e.getMessage());
         }
