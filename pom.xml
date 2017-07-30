@@ -27,7 +27,6 @@
         <version.surfire>2.19.1</version.surfire>
         <version.assertj>3.4.1</version.assertj>
         <version.commons.collection>3.2.2</version.commons.collection>
-        <version.avro>1.8.0</version.avro>
         <ga4gh.testServer.url/>
     </properties>
 
@@ -97,11 +96,6 @@
             <groupId>commons-collections</groupId>
             <artifactId>commons-collections</artifactId>
             <version>${version.commons.collection}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.avro</groupId>
-            <artifactId>avro</artifactId>
-            <version>${version.avro}</version>
         </dependency>
     </dependencies>
 
