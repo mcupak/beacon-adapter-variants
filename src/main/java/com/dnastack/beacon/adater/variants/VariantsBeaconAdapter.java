@@ -3,6 +3,7 @@ package com.dnastack.beacon.adater.variants;
 import com.dnastack.beacon.adapter.api.BeaconAdapter;
 import com.dnastack.beacon.adater.variants.client.ga4gh.Ga4ghClient;
 import com.dnastack.beacon.adater.variants.client.ga4gh.exceptions.Ga4ghClientException;
+import com.dnastack.beacon.adater.variants.client.ga4gh.model.Ga4ghClientRequest;
 import com.dnastack.beacon.exceptions.BeaconAlleleRequestException;
 import com.dnastack.beacon.exceptions.BeaconException;
 import com.dnastack.beacon.utils.AdapterConfig;
@@ -37,6 +38,8 @@ import java.util.stream.Stream;
 @Dependent
 public class VariantsBeaconAdapter implements BeaconAdapter {
 
+    public static final String DEFAULT_BASE_URL = "http://1kgenomes.ga4gh.org/";
+
     public static final Beacon SAMPLE_BEACON = Beacon.newBuilder()
             .setId("sample-beacon")
             .setName("Sample Beacon")
@@ -49,7 +52,7 @@ public class VariantsBeaconAdapter implements BeaconAdapter {
                     .build())
             .build();
 
-    private Ga4ghClient ga4ghClient = new Ga4ghClient();
+    private Ga4ghClient ga4ghClient;
 
     /**
      * Copy of the the Java 8 function, but can throw {@link BeaconAlleleRequestException}.
@@ -70,14 +73,28 @@ public class VariantsBeaconAdapter implements BeaconAdapter {
     }
 
     private void initGa4ghClient(AdapterConfig adapterConfig) {
-        String ga4ghBaseUrl = getGa4ghBaseUrl(adapterConfig);
-        ga4ghClient = ga4ghBaseUrl == null ? new Ga4ghClient() : new Ga4ghClient(ga4ghBaseUrl);
+        ga4ghClient = new Ga4ghClient(Ga4ghClientRequest.builder()
+                .withBaseUrl(getGa4ghBaseUrl(adapterConfig))
+                .withApiKey(getGa4ghApiKey(adapterConfig))
+                .build());
+    }
+
+    private String getGa4ghApiKey(AdapterConfig adapterConfig) {
+        List<ConfigValue> configValues = adapterConfig.getConfigValues();
+
+        for (ConfigValue configValue : configValues) {
+            if (configValue.getName().equals("key")) {
+                return configValue.getValue();
+            }
+        }
+
+        return null;
     }
 
     private String getGa4ghBaseUrl(AdapterConfig adapterConfig) {
         List<ConfigValue> configValues = adapterConfig.getConfigValues();
         ConfigValue ga4ghBaseUrl = Iterables.getFirst(configValues, null);
-        return ga4ghBaseUrl == null ? null : ga4ghBaseUrl.getValue();
+        return ga4ghBaseUrl == null ? DEFAULT_BASE_URL : ga4ghBaseUrl.getValue();
     }
 
     private BeaconAlleleRequest createRequest(String referenceName,

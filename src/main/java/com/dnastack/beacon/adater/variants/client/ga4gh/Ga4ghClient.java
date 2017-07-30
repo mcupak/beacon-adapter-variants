@@ -1,9 +1,9 @@
 package com.dnastack.beacon.adater.variants.client.ga4gh;
 
 import com.dnastack.beacon.adater.variants.client.ga4gh.exceptions.Ga4ghClientException;
+import com.dnastack.beacon.adater.variants.client.ga4gh.model.Ga4ghClientRequest;
 import com.dnastack.beacon.adater.variants.client.ga4gh.retro.Ga4ghRetroService;
 import com.dnastack.beacon.adater.variants.client.ga4gh.retro.Ga4ghRetroServiceFactory;
-import com.google.common.base.Preconditions;
 import com.google.protobuf.GeneratedMessage;
 import com.google.protobuf.Message.Builder;
 import ga4gh.Metadata.Dataset;
@@ -37,8 +37,6 @@ import java.util.stream.Collectors;
  */
 public class Ga4ghClient {
 
-    public static final String DEFAULT_BASE_URL = "http://1kgenomes.ga4gh.org/";
-
     private Ga4ghRetroService ga4ghRetroService;
 
     /**
@@ -52,18 +50,12 @@ public class Ga4ghClient {
     }
 
     /**
-     * Creates a Ga4gh client with the default
-     * base url: {@value Ga4ghClient#DEFAULT_BASE_URL}.
+     * Create Ga4ghClient
+     *
+     * @param request Request to create a client
      */
-    public Ga4ghClient() {
-        setBaseUrl(DEFAULT_BASE_URL);
-    }
-
-    /**
-     * Creates a Ga4gh Client with the specified base url.
-     */
-    public Ga4ghClient(String baseUrl) {
-        setBaseUrl(baseUrl);
+    public Ga4ghClient(Ga4ghClientRequest request) {
+        createGa4ghRetroService(request);
     }
 
     private <T> T executeCall(Call<T> call) throws Ga4ghClientException {
@@ -78,7 +70,7 @@ public class Ga4ghClient {
             return response.body();
         } else {
             throw new Ga4ghClientException(String.format("Received error response from server. HTTP code: %s",
-                                                         response.code()));
+                    response.code()));
         }
     }
 
@@ -119,41 +111,40 @@ public class Ga4ghClient {
         }
     }
 
-    public void setBaseUrl(String baseUrl) {
-        Preconditions.checkArgument(StringUtils.isNotBlank(baseUrl), "baseUrl mustn't be null or empty.");
-        ga4ghRetroService = Ga4ghRetroServiceFactory.create(baseUrl);
+    public void createGa4ghRetroService(Ga4ghClientRequest request) {
+        ga4ghRetroService = Ga4ghRetroServiceFactory.create(request);
     }
 
     public List<Dataset> searchDatasets() throws Ga4ghClientException {
         SearchDatasetsRequest request = SearchDatasetsRequest.newBuilder().build();
 
         List<SearchDatasetsResponse> allResponsePages = requestAllResponsePages(request,
-                                                                                pagedRequest -> executeCall(
-                                                                                        ga4ghRetroService.searchDatasets(
-                                                                                                pagedRequest)));
+                pagedRequest -> executeCall(
+                        ga4ghRetroService.searchDatasets(
+                                pagedRequest)));
 
         List<Dataset> allDatasets = allResponsePages.stream()
-                                                    .flatMap(responsePage -> responsePage.getDatasetsList().stream())
-                                                    .collect(Collectors.toList());
+                .flatMap(responsePage -> responsePage.getDatasetsList().stream())
+                .collect(Collectors.toList());
         return allDatasets;
     }
 
     public List<Variant> searchVariants(String variantSetId, String referenceName, long start) throws Ga4ghClientException {
         SearchVariantsRequest request = SearchVariantsRequest.newBuilder()
-                                                             .setVariantSetId(variantSetId)
-                                                             .setReferenceName(referenceName)
-                                                             .setStart(start)
-                                                             .setEnd(start + 1)
-                                                             .build();
+                .setVariantSetId(variantSetId)
+                .setReferenceName(referenceName)
+                .setStart(start)
+                .setEnd(start + 1)
+                .build();
 
         List<SearchVariantsResponse> allResponsePages = requestAllResponsePages(request,
-                                                                                pagedRequest -> executeCall(
-                                                                                        ga4ghRetroService.searchVariants(
-                                                                                                pagedRequest)));
+                pagedRequest -> executeCall(
+                        ga4ghRetroService.searchVariants(
+                                pagedRequest)));
 
         List<Variant> variants = allResponsePages.stream()
-                                                 .flatMap(responsePage -> responsePage.getVariantsList().stream())
-                                                 .collect(Collectors.toList());
+                .flatMap(responsePage -> responsePage.getVariantsList().stream())
+                .collect(Collectors.toList());
         return variants;
     }
 
@@ -161,14 +152,14 @@ public class Ga4ghClient {
         SearchVariantSetsRequest request = SearchVariantSetsRequest.newBuilder().setDatasetId(datasetId).build();
 
         List<SearchVariantSetsResponse> allResponsePages = requestAllResponsePages(request,
-                                                                                   pagedRequest -> executeCall(
-                                                                                           ga4ghRetroService.searchVariantSets(
-                                                                                                   pagedRequest)));
+                pagedRequest -> executeCall(
+                        ga4ghRetroService.searchVariantSets(
+                                pagedRequest)));
 
         List<VariantSet> variantSets = allResponsePages.stream()
-                                                       .flatMap(responsePage -> responsePage.getVariantSetsList()
-                                                                                            .stream())
-                                                       .collect(Collectors.toList());
+                .flatMap(responsePage -> responsePage.getVariantSetsList()
+                        .stream())
+                .collect(Collectors.toList());
         return variantSets;
     }
 
