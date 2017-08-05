@@ -1,7 +1,5 @@
-package com.dnastack.beacon.adapter.variants.tests.error
+package com.dnastack.beacon.adapter.variants
 
-import com.dnastack.beacon.adapter.variants.BaseTest
-import com.dnastack.beacon.adapter.variants.TestData
 import com.dnastack.beacon.exceptions.BeaconException
 import org.ga4gh.beacon.BeaconAlleleRequest
 
@@ -44,7 +42,7 @@ class BeaconResponseUnknownDatasetTest extends BaseTest {
 
     private void testGetMethod(BeaconAlleleRequest request) {
         try {
-            ADAPTER.getBeaconAlleleResponse(
+            BaseTest.ADAPTER.getBeaconAlleleResponse(
                     request.getReferenceName(),
                     request.getStart(),
                     request.getReferenceBases(),
@@ -61,7 +59,7 @@ class BeaconResponseUnknownDatasetTest extends BaseTest {
 
     private void testPostMethod(BeaconAlleleRequest request) {
         try {
-            ADAPTER.getBeaconAlleleResponse(request);
+            BaseTest.ADAPTER.getBeaconAlleleResponse(request);
             failBecauseExceptionWasNotThrown(BeaconException.class);
         } catch (BeaconException e) {
             def unknownDatasetId = request.getDatasetIds().get(0)

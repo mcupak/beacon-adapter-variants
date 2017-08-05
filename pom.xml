@@ -20,6 +20,7 @@
         <version.protobuf>3.0.0-beta-3</version.protobuf>
         <version.retrofit>2.0.2</version.retrofit>
         <version.commons.lang>3.4</version.commons.lang>
+        <version.guava>18.0</version.guava>
         <version.groovy>2.4.6</version.groovy>
         <version.gmaven>1.5</version.gmaven>
         <version.wiremock>1.58</version.wiremock>
@@ -69,6 +70,11 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>${version.commons.lang}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${version.guava}</version>
         </dependency>
         <dependency>
             <groupId>org.codehaus.groovy</groupId>

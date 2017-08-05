@@ -17,6 +17,7 @@ import static com.dnastack.beacon.adapter.variants.TestData.*
 import static com.dnastack.beacon.adater.variants.client.ga4gh.retro.Ga4ghRetroService.*
 import static com.github.tomakehurst.wiremock.client.WireMock.*
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
+
 /**
  * Helper class for variants adapter tests.
  * </p>

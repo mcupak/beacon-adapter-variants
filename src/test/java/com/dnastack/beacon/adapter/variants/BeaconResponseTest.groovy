@@ -1,4 +1,4 @@
-package com.dnastack.beacon.adapter.variants.tests.successful
+package com.dnastack.beacon.adapter.variants
 
 import com.dnastack.beacon.adapter.variants.BaseTest
 import org.ga4gh.beacon.BeaconAlleleRequest
@@ -6,6 +6,7 @@ import org.ga4gh.beacon.BeaconAlleleResponse
 
 import static com.dnastack.beacon.adapter.variants.TestData.*
 import static org.assertj.core.api.Assertions.assertThat
+
 /**
  * @author Artem (tema.voskoboynick@gmail.com)
  * @version 1.0
@@ -37,7 +38,7 @@ class BeaconResponseTest extends BaseTest {
     }
 
     private void testGetMethod(BeaconAlleleRequest request) {
-        BeaconAlleleResponse getMethodResponse = ADAPTER.getBeaconAlleleResponse(
+        BeaconAlleleResponse getMethodResponse = BaseTest.ADAPTER.getBeaconAlleleResponse(
                 request.getReferenceName(),
                 request.getStart(),
                 request.getReferenceBases(),
@@ -49,13 +50,13 @@ class BeaconResponseTest extends BaseTest {
     }
 
     private void testPostMethod(BeaconAlleleRequest request) {
-        BeaconAlleleResponse postMethodResponse = ADAPTER.getBeaconAlleleResponse(request);
+        BeaconAlleleResponse postMethodResponse = BaseTest.ADAPTER.getBeaconAlleleResponse(request);
         checkAssertions(postMethodResponse, request)
     }
 
     private void checkAssertions(BeaconAlleleResponse response, BeaconAlleleRequest request) {
         assertThat(response.alleleRequest).isEqualTo(request)
-        assertThat(response.beaconId).isEqualTo(ADAPTER.getBeacon().getId())
+        assertThat(response.beaconId).isEqualTo(BaseTest.ADAPTER.getBeacon().getId())
         assertThat(response.datasetAlleleResponses).hasSize(1)
         assertThat(response.error).isNull()
         assertThat(response.exists).isTrue()

@@ -31,7 +31,11 @@ public class VariantsBeaconAdapterTest {
             List<ConfigValue> values = new ArrayList<>();
             values.add(ConfigValue.builder().name("beaconJsonFile").value(beaconJson).build());
 
-            return AdapterConfig.builder().name("variants_test_beacon").adapterClass(AdapterConfig.class.getCanonicalName()).configValues(values).build();
+            return AdapterConfig.builder()
+                                .name("variants_test_beacon")
+                                .adapterClass(AdapterConfig.class.getCanonicalName())
+                                .configValues(values)
+                                .build();
         } catch (URISyntaxException e) {
             throw new NullPointerException(e.getMessage());
         }
@@ -49,12 +53,12 @@ public class VariantsBeaconAdapterTest {
         BeaconAdapter adapter = new VariantsBeaconAdapter();
         assertThatThrownBy(adapter::getBeacon).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> adapter.getBeaconAlleleResponse(null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null)).isInstanceOf(IllegalStateException.class);
+                                                                 null,
+                                                                 null,
+                                                                 null,
+                                                                 null,
+                                                                 null,
+                                                                 null)).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> adapter.getBeaconAlleleResponse(null)).isInstanceOf(IllegalStateException.class);
     }
 
