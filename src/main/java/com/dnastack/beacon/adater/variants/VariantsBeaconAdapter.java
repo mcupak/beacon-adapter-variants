@@ -23,7 +23,8 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.ga4gh.beacon.*;
 
-import javax.enterprise.context.Dependent;
+import javax.annotation.PostConstruct;
+import javax.ejb.Singleton;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -38,7 +39,7 @@ import java.util.stream.Collectors;
  * @author Miro Cupak (mirocupak@gmail.com)
  * @version 1.0
  */
-@Dependent
+@Singleton
 public class VariantsBeaconAdapter implements BeaconAdapter {
 
     private static final Set<Set<String>> ASSEMBLY_ALIASES = ImmutableSet.of(ImmutableSet.of("grch38", "hg38", "hg20"),
@@ -48,6 +49,55 @@ public class VariantsBeaconAdapter implements BeaconAdapter {
                                                                              ImmutableSet.of("ncbi34", "hg16"));
 
     private Ga4ghClient ga4ghClient;
+
+    @PostConstruct
+    public void init() {
+        initAdapter(AdapterConfig.builder().name("beacon-variants")
+                .adapterClass(VariantsBeaconAdapter.class.getCanonicalName())
+                .configValues(Collections.singletonList(ConfigValue.builder()
+                        .name("beaconJson")
+                        .value(getBeaconJson())
+                        .build()))
+                .build());
+    }
+
+    // TO DO: needed to find a solution for more convenient configuration.
+    private String getBeaconJson() {
+        return "{\n" +
+                "    \"id\": \"sample-beacon\",\n" +
+                "    \"name\": \"variant_test_beacon\",\n" +
+                "    \"apiVersion\": \"0.3\",\n" +
+                "    \"organization\": {\n" +
+                "        \"id\": \"variant_org\",\n" +
+                "        \"name\": \"variant Adapter organization\",\n" +
+                "        \"description\": \"test organization for the variant Beacon adapter\",\n" +
+                "        \"address\": \"99 Lambda Drive, Consumer, Canada\",\n" +
+                "        \"welcomeUrl\": \"www.welcome.com\",\n" +
+                "        \"contactUrl\": \"www.contact.com\",\n" +
+                "        \"logoUrl\": \"www.logo.com\"\n" +
+                "    },\n" +
+                "    \"description\": \"This beacon demonstrates the usage of the variantBeaconAdapter\",\n" +
+                "    \"version\": \"1\",\n" +
+                "    \"welcomeUrl\": \"www.welcome.com\",\n" +
+                "    \"alternativeUrl\": \"www.alternative.com\",\n" +
+                "    \"createDateTime\": \"2016/07/23 19:23:11\",\n" +
+                "    \"updateDateTime\": \"2016/07/23 19:23:11\",\n" +
+                "    \"datasets\": [\n" +
+                "        {\n" +
+                "            \"id\": \"WyIxa2dlbm9tZXMiXQ\",\n" +
+                "            \"name\": \"variant-test-gt\",\n" +
+                "            \"description\": \"variant Adapter test dataset which includes sample / gt info\",\n" +
+                "            \"assemblyId\": \"GRCh37\",\n" +
+                "            \"createDateTime\": \"2016/07/23 19:23:11\",\n" +
+                "            \"updateDateTime\": \"2016/07/23 19:23:11\",\n" +
+                "            \"version\": \"1\",\n" +
+                "            \"variantCount\": 26,\n" +
+                "            \"sampleCount\": 1,\n" +
+                "            \"externalUrl\": \"http://1kgenomes.ga4gh.org/\"\n" +
+                "        }\n" +
+                "    ]\n" +
+                "}";
+    }
 
     /**
      * Copy of the the Java 8 function, but can throw {@link BeaconAlleleRequestException}.
