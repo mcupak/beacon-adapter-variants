@@ -18,7 +18,7 @@
         <version.beacon.adapter.api>1.0-SNAPSHOT</version.beacon.adapter.api>
         <version.ga4gh.schema>0.6.0a10</version.ga4gh.schema>
         <version.protobuf>3.0.0-beta-3</version.protobuf>
-        <version.retrofit>2.0.2</version.retrofit>
+        <version.retrofit>2.3.0</version.retrofit>
         <version.commons.lang>3.4</version.commons.lang>
         <version.guava>18.0</version.guava>
         <version.groovy>2.4.6</version.groovy>
